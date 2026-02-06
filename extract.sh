@@ -64,3 +64,39 @@ sed -i -e "s/${ORDER32_bind}/${ORDER32_nobind}/" $Extracted_File
 ORDER32_bind1='(value := (← ((← (Mersenne31.Field.PrimeField32.ORDER_U32 Mersenne31))'
 ORDER32_nobind1='(value := (← ((Mersenne31.Field.PrimeField32.ORDER_U32 Mersenne31)'
 sed -i -e "s/${ORDER32_bind1}/${ORDER32_nobind1}/" $Extracted_File
+
+###########
+# MONTY31 #
+###########
+
+MONTY_BITS_BAD='(← ((← ((1 : u64) <<<? (← (MontyParameters.MONTY_BITS Self))))'
+MONTY_BITS_GOOD='(← ((← ((1 : u64) <<<? MONTY_BITS))'
+sed -i -e "s/${MONTY_BITS_BAD}/${MONTY_BITS_GOOD}/" $Extracted_File
+
+MONTY_B='%? (← (Rust_primitives.Hax.cast_op (← (MontyParameters.PRIME MP)))))))'
+MONTY_G='%? (← (@Rust_primitives.Hax.cast_op u32 u64 _ (← (MontyParameters.PRIME MP)))))))'
+sed -i -e "s/${MONTY_B}/${MONTY_G}/" $Extracted_File
+
+MONTY_B='(← ((← ((← (Rust_primitives.Hax.cast_op x))\n        <<<? (← (MontyParameters.MONTY_BITS MP))))'
+MONTY_G='(← ((← ((← (@Rust_primitives.Hax.cast_op u32 u64 _ x))\n        <<<? (MontyParameters.MONTY_BITS MP)))'
+sed -i -z -e "s/${MONTY_B}/${MONTY_G}/" $Extracted_File
+
+MONTY_B='← (MontyParameters.MONTY_BITS MP)'
+MONTY_G='MontyParameters.MONTY_BITS MP'
+sed -i -e "s/${MONTY_B}/${MONTY_G}/g" $Extracted_File
+
+MONTY_B='← (MontyParameters.MONTY_MU MP)'
+MONTY_G='MontyParameters.MONTY_MU MP'
+sed -i -e "s/${MONTY_B}/${MONTY_G}/g" $Extracted_File
+
+MONTY_B='← (MontyParameters.PRIME Self)'
+MONTY_G='MontyParameters.PRIME Self'
+sed -i -e "s/${MONTY_B}/${MONTY_G}/g" $Extracted_File
+
+MONTY_B='← (MontyParameters.PRIME MP)'
+MONTY_G='MontyParameters.PRIME MP'
+sed -i -e "s/${MONTY_B}/${MONTY_G}/g" $Extracted_File
+
+MONTY_B='(t \*? (← (Rust_primitives.Hax.cast_op'
+MONTY_G='(t \*? (← (@Rust_primitives.Hax.cast_op u32 u64 _'
+sed -i -e "s/${MONTY_B}/${MONTY_G}/g" $Extracted_File
