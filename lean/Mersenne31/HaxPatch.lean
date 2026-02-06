@@ -22,8 +22,14 @@ class overflowing_sub (α : Type) where
 abbrev Core_models.Num.Impl_8.overflowing_sub {α : Type} [self : HaxPatch.overflowing_sub α] :=
   @overflowing_sub.os α self
 
+abbrev Core_models.Num.Impl_9.overflowing_sub {α : Type} [self : HaxPatch.overflowing_sub α] :=
+  @overflowing_sub.os α self
+
 @[reducible] instance : overflowing_sub UInt32 where
   os := fun (n m : UInt32) => RustM.ok (n - m, decide (n < m))
+
+@[reducible] instance : overflowing_sub UInt64 where
+  os := fun (n m : UInt64) => RustM.ok (n - m, decide (n < m))
 
 class wrapping_sub (α : Type) where
   ws : α → α → RustM α
