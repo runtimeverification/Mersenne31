@@ -40,6 +40,15 @@ abbrev Core_models.Num.Impl_8.wrapping_sub {α : Type} [self : HaxPatch.wrapping
 @[reducible] instance : wrapping_sub UInt32 where
  ws := fun (n m : UInt32) => RustM.ok (n - m)
 
+class wrapping_mul (α : Type) where
+  wm : α → α → RustM α
+
+abbrev Core_models.Num.Impl_9.wrapping_mul {α : Type} [self : HaxPatch.wrapping_mul α] :=
+  @wrapping_mul.wm α self
+
+@[reducible] instance : wrapping_mul UInt64 where
+  wm := fun (n m : UInt64) => RustM.ok (n * m)
+
 instance : Cast Bool u32 where
   cast x := ite x 1 0
 
