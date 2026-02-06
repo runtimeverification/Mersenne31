@@ -67,117 +67,6 @@ class Product (Self : Type) (A : Type)
 end Mersenne31.Unimplemented
 
 
-namespace Mersenne31.Mersenne31
-
---  The Mersenne31 prime
-def P : u32 :=
-  RustM.of_isOk (do ((← ((1 : u32) <<<? (31 : i32))) -? (1 : u32))) (by rfl)
-
---  The Mersenne31 prime as u64 to avoid casting `P`
-def P64 : u64 :=
-  RustM.of_isOk (do ((← ((1 : u64) <<<? (31 : i32))) -? (1 : u64))) (by rfl)
-
---  The prime field `F_p` where `p = 2^31 - 1`.
-structure Mersenne31 where
-  value : u32
-
-@[instance] opaque Impl_14.AssociatedTypes :
-  Core_models.Clone.Clone.AssociatedTypes Mersenne31 :=
-  by constructor <;> exact Inhabited.default
-
-@[instance] opaque Impl_14 :
-  Core_models.Clone.Clone Mersenne31 :=
-  by constructor <;> exact Inhabited.default
-
-@[instance] opaque Impl_13.AssociatedTypes :
-  Core_models.Marker.Copy.AssociatedTypes Mersenne31 :=
-  by constructor <;> exact Inhabited.default
-
-@[instance] opaque Impl_13 :
-  Core_models.Marker.Copy Mersenne31 :=
-  by constructor <;> exact Inhabited.default
-
-@[instance] opaque Impl_15.AssociatedTypes :
-  Core_models.Default.Default.AssociatedTypes Mersenne31 :=
-  by constructor <;> exact Inhabited.default
-
-@[instance] opaque Impl_15 :
-  Core_models.Default.Default Mersenne31 :=
-  by constructor <;> exact Inhabited.default
-
---  Create a new field element from any `u32`.
--- 
---  Any `u32` value is accepted and automatically reduced modulo P.
-def Impl.new (value : u32) : RustM Mersenne31 := do
-  (pure (Mersenne31.mk (value := (← (value %? P)))))
-
---  Create a field element from a value assumed to be < 2^31.
--- 
---  # Safety
---  The element must lie in the range: `[0, 2^31 - 1]`.
-def Impl.new_reduced (value : u32) : RustM Mersenne31 := do
-  let _ ←
-    (Hax_lib.assert
-      (← (Rust_primitives.Hax.Machine_int.eq
-        (← (value >>>? (31 : i32)))
-        (0 : u32))));
-  (pure (Mersenne31.mk (value := value)))
-
---  Convert a u32 element into a Mersenne31 element.
--- 
---  Returns `None` if the element does not lie in the range: `[0, 2^31 - 1]`.
-def Impl.new_checked (value : u32) :
-    RustM (Core_models.Option.Option Mersenne31) := do
-  if
-  (← (Rust_primitives.Hax.Machine_int.eq (← (value >>>? (31 : i32))) (0 : u32)))
-  then
-    (pure (Core_models.Option.Option.Some (Mersenne31.mk (value := value))))
-  else
-    (pure Core_models.Option.Option.None)
-
---  NOTE: Placeholder dummy impl
-@[reducible] instance Impl_11.AssociatedTypes :
-  Mersenne31.Unimplemented.Sum.AssociatedTypes Mersenne31 Mersenne31
-  where
-
-instance Impl_11 : Mersenne31.Unimplemented.Sum Mersenne31 Mersenne31 where
-  sum :=
-    fun
-      (I : Type)
-      [trait_constr_sum_associated_type_i0 :
-        Mersenne31.Unimplemented.Iterator.AssociatedTypes
-        I]
-      [trait_constr_sum_i0 : Mersenne31.Unimplemented.Iterator
-        I
-        (associatedTypes := {
-          show Mersenne31.Unimplemented.Iterator.AssociatedTypes I
-          by infer_instance
-          with Item := Mersenne31})] (iter : I) => do
-    (Impl.new (0 : u32))
-
---  NOTE: Placeholder dummy impl. Unclear atm where the source is.
-@[reducible] instance Impl_12.AssociatedTypes :
-  Mersenne31.Unimplemented.Product.AssociatedTypes Mersenne31 Mersenne31
-  where
-
-instance Impl_12 : Mersenne31.Unimplemented.Product Mersenne31 Mersenne31 where
-  product :=
-    fun
-      (I : Type)
-      [trait_constr_product_associated_type_i0 :
-        Mersenne31.Unimplemented.Iterator.AssociatedTypes
-        I]
-      [trait_constr_product_i0 : Mersenne31.Unimplemented.Iterator
-        I
-        (associatedTypes := {
-          show Mersenne31.Unimplemented.Iterator.AssociatedTypes I
-          by infer_instance
-          with Item := Mersenne31})] (iter : I) => do
-    (Impl.new (0 : u32))
-
-end Mersenne31.Mersenne31
-
-
 namespace Mersenne31.Field
 
 --  NOTE: DUMMY PLACEHOLDER. Missing `PrimeField`
@@ -388,166 +277,332 @@ attribute [instance]
 end Mersenne31.Field
 
 
-namespace Mersenne31.Mersenne31
+namespace Mersenne31.Monty_31
 
---  NOTE: Dummy implementation of a dummy trait
-@[reducible] instance Impl_3.AssociatedTypes :
-  Mersenne31.Field.PrimeField32.AssociatedTypes Mersenne31
+--  MontyParameters contains the prime P along with constants needed to convert elements into and out of MONTY form.
+--  The MONTY constant is assumed to be a power of 2.
+class MontyParameters.AssociatedTypes (Self : Type) where
+  [trait_constr_MontyParameters_i0 :
+  Core_models.Marker.Copy.AssociatedTypes
+  Self]
+
+attribute [instance]
+  MontyParameters.AssociatedTypes.trait_constr_MontyParameters_i0
+
+class MontyParameters (Self : Type)
+  [associatedTypes : outParam (MontyParameters.AssociatedTypes (Self : Type))]
   where
-
-instance Impl_3 : Mersenne31.Field.PrimeField32 Mersenne31 where
-  ORDER_U32 := P
-  as_canonical_u32 := fun (self : Mersenne31) => do
-    if
-    (← (Rust_primitives.Hax.Machine_int.eq
-      (Mersenne31.value self) P)) then
-      (pure (0 : u32))
-    else
-      (pure (Mersenne31.value self))
-
---  NOTE: Dummy implementation of a dummy trait
-@[reducible] instance Impl_2.AssociatedTypes :
-  Mersenne31.Field.PrimeField64.AssociatedTypes Mersenne31
-  where
-
-instance Impl_2 : Mersenne31.Field.PrimeField64 Mersenne31 where
-  ORDER_U64 := P64
-  as_canonical_u64 := fun (self : Mersenne31) => do
-    (Core_models.Convert.Into.into
-      u32
-      u64 (← (Mersenne31.Field.PrimeField32.as_canonical_u32 Mersenne31 self)))
-
-@[reducible] instance Impl_4.AssociatedTypes :
-  Core_models.Ops.Arith.Add.AssociatedTypes Mersenne31 Mersenne31
-  where
-  Output := Mersenne31
-
-instance Impl_4 : Core_models.Ops.Arith.Add Mersenne31 Mersenne31 where
-  add := fun (self : Mersenne31) (rhs : Mersenne31) => do
-    let ⟨sum_i32, over⟩ ←
-      (Core_models.Num.Impl_2.overflowing_add
-        (← (Rust_primitives.Hax.cast_op (Mersenne31.value self)))
-        (← (Rust_primitives.Hax.cast_op (Mersenne31.value rhs))));
-    let sum_u32 : u32 ← (Rust_primitives.Hax.cast_op sum_i32);
-    let sum_corr : u32 ←
-      (Core_models.Num.Impl_8.wrapping_sub
-        sum_u32
-        (← (Mersenne31.Field.PrimeField32.ORDER_U32 Mersenne31)));
-    (Impl.new_reduced (← if over then (pure sum_corr) else (pure sum_u32)))
-
-@[reducible] instance Impl_5.AssociatedTypes :
-  Core_models.Ops.Arith.Sub.AssociatedTypes Mersenne31 Mersenne31
-  where
-  Output := Mersenne31
-
-instance Impl_5 : Core_models.Ops.Arith.Sub Mersenne31 Mersenne31 where
-  sub := fun (self : Mersenne31) (rhs : Mersenne31) => do
-    let ⟨sub, over⟩ ←
-      (Core_models.Num.Impl_8.overflowing_sub
-        (Mersenne31.value self)
-        (Mersenne31.value rhs));
-    let sub : u32 ← (sub -? (← (@Rust_primitives.Hax.cast_op Bool u32 _ over)));
-    (Impl.new_reduced
-      (← (sub &&&? (← (Mersenne31.Field.PrimeField32.ORDER_U32 Mersenne31)))))
-
-@[reducible] instance Impl_6.AssociatedTypes :
-  Core_models.Ops.Arith.Neg.AssociatedTypes Mersenne31
-  where
-  Output := Mersenne31
-
-instance Impl_6 : Core_models.Ops.Arith.Neg Mersenne31 where
-  neg := fun (self : Mersenne31) => do
-    (Impl.new_reduced
-      (← ((Mersenne31.Field.PrimeField32.ORDER_U32 Mersenne31)
-        -? (Mersenne31.value self))))
-
-@[reducible] instance Impl_8.AssociatedTypes :
-  Core_models.Ops.Arith.AddAssign.AssociatedTypes Mersenne31 Mersenne31
-  where
-
-instance Impl_8 : Core_models.Ops.Arith.AddAssign Mersenne31 Mersenne31 where
-  add_assign := fun (self : Mersenne31) (rhs : Mersenne31) => do
-    let self : Mersenne31 ←
-      (Core_models.Ops.Arith.Add.add Mersenne31 Mersenne31 self rhs);
-    (pure self)
-
-@[reducible] instance Impl_9.AssociatedTypes :
-  Core_models.Ops.Arith.SubAssign.AssociatedTypes Mersenne31 Mersenne31
-  where
-
-instance Impl_9 : Core_models.Ops.Arith.SubAssign Mersenne31 Mersenne31 where
-  sub_assign := fun (self : Mersenne31) (rhs : Mersenne31) => do
-    let self : Mersenne31 ←
-      (Core_models.Ops.Arith.Sub.sub Mersenne31 Mersenne31 self rhs);
-    (pure self)
-
-def from_u62 (input : u64) : RustM Mersenne31 := do
-  let _ ←
-    (Hax_lib.assert
-      (← (Rust_primitives.Hax.Machine_int.lt
-        input
-        (← ((1 : u64) <<<? (62 : i32))))));
-  let input_lo : u32 ←
+  [trait_constr_MontyParameters_i0 : Core_models.Marker.Copy Self]
+  PRIME (Self) : u32
+  MONTY_BITS (Self) : u32
+  MONTY_MU (Self) : u32
+  MONTY_MASK (Self) :RustM u32 := do
     (Rust_primitives.Hax.cast_op
-      (← (input &&&? (← ((← ((1 : u64) <<<? (31 : i32))) -? (1 : u64))))));
-  let input_high : u32 ←
-    (Rust_primitives.Hax.cast_op (← (input >>>? (31 : i32))));
-  (Core_models.Ops.Arith.Add.add
-    Mersenne31
-    Mersenne31
-    (← (Impl.new_reduced input_lo))
-    (← (Impl.new_reduced input_high)))
+      (← ((← ((1 : u64) <<<? MONTY_BITS))
+        -? (1 : u64))))
 
-@[reducible] instance Impl_7.AssociatedTypes :
-  Core_models.Ops.Arith.Mul.AssociatedTypes Mersenne31 Mersenne31
+attribute [instance] MontyParameters.trait_constr_MontyParameters_i0
+
+--  Convert a u32 into MONTY form.
+--  There are no constraints on the input.
+--  The output will be a u32 in range `[0, P)`.
+def to_monty
+    (MP : Type)
+    [trait_constr_to_monty_associated_type_i0 : MontyParameters.AssociatedTypes
+      MP]
+    [trait_constr_to_monty_i0 : MontyParameters MP ]
+    (x : u32) :
+    RustM u32 := do
+  (Rust_primitives.Hax.cast_op
+    (← ((← ((← (@Rust_primitives.Hax.cast_op u32 u64 _ x))
+        <<<? (MontyParameters.MONTY_BITS MP)))
+      %? (← (@Rust_primitives.Hax.cast_op u32 u64 _ (MontyParameters.PRIME MP))))))
+
+--  Montgomery reduction of a value in `0..P << MONTY_BITS`.
+-- 
+--  The input must be in `[0, MONTY * P)`.
+--  The output will be in `[0, P)`.
+def monty_reduce
+    (MP : Type)
+    [trait_constr_monty_reduce_associated_type_i0 :
+      MontyParameters.AssociatedTypes
+      MP]
+    [trait_constr_monty_reduce_i0 : MontyParameters MP ]
+    (x : u64) :
+    RustM u32 := do
+  let t : u64 ←
+    ((← (Core_models.Num.Impl_9.wrapping_mul
+        x
+        (← (Rust_primitives.Hax.cast_op (MontyParameters.MONTY_MU MP)))))
+      &&&? (← (Rust_primitives.Hax.cast_op
+        (← (MontyParameters.MONTY_MASK MP)))));
+  let u : u64 ←
+    (t *? (← (@Rust_primitives.Hax.cast_op u32 u64 _ (MontyParameters.PRIME MP))));
+  let ⟨x_sub_u, over⟩ ← (Core_models.Num.Impl_9.overflowing_sub x u);
+  let x_sub_u_hi : u32 ←
+    (Rust_primitives.Hax.cast_op
+      (← (x_sub_u >>>? (MontyParameters.MONTY_BITS MP))));
+  let corr : u32 ←
+    if over then (MontyParameters.PRIME MP) else (pure (0 : u32));
+  (Core_models.Num.Impl_8.wrapping_add x_sub_u_hi corr)
+
+--  Convert a u32 out of MONTY form.
+--  There are no constraints on the input.
+--  The output will be a u32 in range `[0, P)`.
+def from_monty
+    (MP : Type)
+    [trait_constr_from_monty_associated_type_i0 :
+      MontyParameters.AssociatedTypes
+      MP]
+    [trait_constr_from_monty_i0 : MontyParameters MP ]
+    (x : u32) :
+    RustM u32 := do
+  (monty_reduce MP (← (Rust_primitives.Hax.cast_op x)))
+
+--  PackedMontyParameters contains constants needed for MONTY operations for packings of Monty31 fields.
+class PackedMontyParameters.AssociatedTypes (Self : Type) where
+  [trait_constr_PackedMontyParameters_i0 : MontyParameters.AssociatedTypes Self]
+
+attribute [instance]
+  PackedMontyParameters.AssociatedTypes.trait_constr_PackedMontyParameters_i0
+
+class PackedMontyParameters (Self : Type)
+  [associatedTypes : outParam (PackedMontyParameters.AssociatedTypes (Self :
+      Type))]
   where
-  Output := Mersenne31
+  [trait_constr_PackedMontyParameters_i0 : MontyParameters Self]
 
-instance Impl_7 : Core_models.Ops.Arith.Mul Mersenne31 Mersenne31 where
-  mul := fun (self : Mersenne31) (rhs : Mersenne31) => do
-    let prod : u64 ←
-      ((← (Core_models.Convert.From._from u64 u32 (Mersenne31.value self)))
-        *? (← (Core_models.Convert.From._from u64 u32 (Mersenne31.value rhs))));
-    (from_u62 prod)
+attribute [instance] PackedMontyParameters.trait_constr_PackedMontyParameters_i0
 
-@[reducible] instance Impl_10.AssociatedTypes :
-  Core_models.Ops.Arith.MulAssign.AssociatedTypes Mersenne31 Mersenne31
+structure MontyField31
+  (MP : Type)
+  [trait_constr_MontyField31_associated_type_i0 :
+    MontyParameters.AssociatedTypes
+    MP]
+  [trait_constr_MontyField31_i0 : MontyParameters MP ]
   where
+  value : u32
+  _phantom : (Core_models.Marker.PhantomData MP)
 
-instance Impl_10 : Core_models.Ops.Arith.MulAssign Mersenne31 Mersenne31 where
-  mul_assign := fun (self : Mersenne31) (rhs : Mersenne31) => do
-    let self : Mersenne31 ←
-      (Core_models.Ops.Arith.Mul.mul Mersenne31 Mersenne31 self rhs);
-    (pure self)
+@[instance] opaque Impl_1.AssociatedTypes
+  (MP : Type)
+  [trait_constr_Impl_1_associated_type_i0 :
+    Core_models.Clone.Clone.AssociatedTypes
+    MP]
+  [trait_constr_Impl_1_i0 : Core_models.Clone.Clone MP ]
+  [trait_constr_Impl_1_associated_type_i1 : MontyParameters.AssociatedTypes MP]
+  [trait_constr_Impl_1_i1 : MontyParameters MP ] :
+  Core_models.Clone.Clone.AssociatedTypes (MontyField31 MP) :=
+  by constructor <;> exact Inhabited.default
 
-@[reducible] instance Impl_1.AssociatedTypes :
-  Mersenne31.Field.PrimeCharacteristicRing.AssociatedTypes Mersenne31
+@[instance] opaque Impl_1
+  (MP : Type)
+  [trait_constr_Impl_1_associated_type_i0 :
+    Core_models.Clone.Clone.AssociatedTypes
+    MP]
+  [trait_constr_Impl_1_i0 : Core_models.Clone.Clone MP ]
+  [trait_constr_Impl_1_associated_type_i1 : MontyParameters.AssociatedTypes MP]
+  [trait_constr_Impl_1_i1 : MontyParameters MP ] :
+  Core_models.Clone.Clone (MontyField31 MP) :=
+  by constructor <;> exact Inhabited.default
+
+@[instance] opaque Impl_2.AssociatedTypes
+  (MP : Type)
+  [trait_constr_Impl_2_associated_type_i0 :
+    Core_models.Marker.Copy.AssociatedTypes
+    MP]
+  [trait_constr_Impl_2_i0 : Core_models.Marker.Copy MP ]
+  [trait_constr_Impl_2_associated_type_i1 : MontyParameters.AssociatedTypes MP]
+  [trait_constr_Impl_2_i1 : MontyParameters MP ] :
+  Core_models.Marker.Copy.AssociatedTypes (MontyField31 MP) :=
+  by constructor <;> exact Inhabited.default
+
+@[instance] opaque Impl_2
+  (MP : Type)
+  [trait_constr_Impl_2_associated_type_i0 :
+    Core_models.Marker.Copy.AssociatedTypes
+    MP]
+  [trait_constr_Impl_2_i0 : Core_models.Marker.Copy MP ]
+  [trait_constr_Impl_2_associated_type_i1 : MontyParameters.AssociatedTypes MP]
+  [trait_constr_Impl_2_i1 : MontyParameters MP ] :
+  Core_models.Marker.Copy (MontyField31 MP) :=
+  by constructor <;> exact Inhabited.default
+
+@[instance] opaque Impl_3.AssociatedTypes
+  (MP : Type)
+  [trait_constr_Impl_3_associated_type_i0 :
+    Core_models.Default.Default.AssociatedTypes
+    MP]
+  [trait_constr_Impl_3_i0 : Core_models.Default.Default MP ]
+  [trait_constr_Impl_3_associated_type_i1 : MontyParameters.AssociatedTypes MP]
+  [trait_constr_Impl_3_i1 : MontyParameters MP ] :
+  Core_models.Default.Default.AssociatedTypes (MontyField31 MP) :=
+  by constructor <;> exact Inhabited.default
+
+@[instance] opaque Impl_3
+  (MP : Type)
+  [trait_constr_Impl_3_associated_type_i0 :
+    Core_models.Default.Default.AssociatedTypes
+    MP]
+  [trait_constr_Impl_3_i0 : Core_models.Default.Default MP ]
+  [trait_constr_Impl_3_associated_type_i1 : MontyParameters.AssociatedTypes MP]
+  [trait_constr_Impl_3_i1 : MontyParameters MP ] :
+  Core_models.Default.Default (MontyField31 MP) :=
+  by constructor <;> exact Inhabited.default
+
+@[instance] opaque Impl_5.AssociatedTypes
+  (MP : Type)
+  [trait_constr_Impl_5_associated_type_i0 :
+    Core_models.Hash.Hash.AssociatedTypes
+    MP]
+  [trait_constr_Impl_5_i0 : Core_models.Hash.Hash MP ]
+  [trait_constr_Impl_5_associated_type_i1 : MontyParameters.AssociatedTypes MP]
+  [trait_constr_Impl_5_i1 : MontyParameters MP ] :
+  Core_models.Hash.Hash.AssociatedTypes (MontyField31 MP) :=
+  by constructor <;> exact Inhabited.default
+
+@[instance] opaque Impl_5
+  (MP : Type)
+  [trait_constr_Impl_5_associated_type_i0 :
+    Core_models.Hash.Hash.AssociatedTypes
+    MP]
+  [trait_constr_Impl_5_i0 : Core_models.Hash.Hash MP ]
+  [trait_constr_Impl_5_associated_type_i1 : MontyParameters.AssociatedTypes MP]
+  [trait_constr_Impl_5_i1 : MontyParameters MP ] :
+  Core_models.Hash.Hash (MontyField31 MP) :=
+  by constructor <;> exact Inhabited.default
+
+@[instance] opaque Impl_6.AssociatedTypes
+  (MP : Type)
+  [trait_constr_Impl_6_associated_type_i0 : MontyParameters.AssociatedTypes MP]
+  [trait_constr_Impl_6_i0 : MontyParameters MP ] :
+  Core_models.Marker.StructuralPartialEq.AssociatedTypes (MontyField31 MP) :=
+  by constructor <;> exact Inhabited.default
+
+@[instance] opaque Impl_6
+  (MP : Type)
+  [trait_constr_Impl_6_associated_type_i0 : MontyParameters.AssociatedTypes MP]
+  [trait_constr_Impl_6_i0 : MontyParameters MP ] :
+  Core_models.Marker.StructuralPartialEq (MontyField31 MP) :=
+  by constructor <;> exact Inhabited.default
+
+@[instance] opaque Impl_7.AssociatedTypes
+  (MP : Type)
+  [trait_constr_Impl_7_associated_type_i0 :
+    Core_models.Cmp.PartialEq.AssociatedTypes
+    MP
+    MP]
+  [trait_constr_Impl_7_i0 : Core_models.Cmp.PartialEq MP MP ]
+  [trait_constr_Impl_7_associated_type_i1 : MontyParameters.AssociatedTypes MP]
+  [trait_constr_Impl_7_i1 : MontyParameters MP ] :
+  Core_models.Cmp.PartialEq.AssociatedTypes (MontyField31 MP) (MontyField31 MP)
+  :=
+  by constructor <;> exact Inhabited.default
+
+@[instance] opaque Impl_7
+  (MP : Type)
+  [trait_constr_Impl_7_associated_type_i0 :
+    Core_models.Cmp.PartialEq.AssociatedTypes
+    MP
+    MP]
+  [trait_constr_Impl_7_i0 : Core_models.Cmp.PartialEq MP MP ]
+  [trait_constr_Impl_7_associated_type_i1 : MontyParameters.AssociatedTypes MP]
+  [trait_constr_Impl_7_i1 : MontyParameters MP ] :
+  Core_models.Cmp.PartialEq (MontyField31 MP) (MontyField31 MP) :=
+  by constructor <;> exact Inhabited.default
+
+@[instance] opaque Impl_4.AssociatedTypes
+  (MP : Type)
+  [trait_constr_Impl_4_associated_type_i0 : Core_models.Cmp.Eq.AssociatedTypes
+    MP]
+  [trait_constr_Impl_4_i0 : Core_models.Cmp.Eq MP ]
+  [trait_constr_Impl_4_associated_type_i1 : MontyParameters.AssociatedTypes MP]
+  [trait_constr_Impl_4_i1 : MontyParameters MP ] :
+  Core_models.Cmp.Eq.AssociatedTypes (MontyField31 MP) :=
+  by constructor <;> exact Inhabited.default
+
+@[instance] opaque Impl_4
+  (MP : Type)
+  [trait_constr_Impl_4_associated_type_i0 : Core_models.Cmp.Eq.AssociatedTypes
+    MP]
+  [trait_constr_Impl_4_i0 : Core_models.Cmp.Eq MP ]
+  [trait_constr_Impl_4_associated_type_i1 : MontyParameters.AssociatedTypes MP]
+  [trait_constr_Impl_4_i1 : MontyParameters MP ] :
+  Core_models.Cmp.Eq (MontyField31 MP) :=
+  by constructor <;> exact Inhabited.default
+
+--  Create a new field element from any `u32`.
+-- 
+--  Any `u32` value is accepted and automatically converted to Montgomery form.
+def Impl.new
+    (MP : Type)
+    [trait_constr_new_associated_type_i0 : MontyParameters.AssociatedTypes MP]
+    [trait_constr_new_i0 : MontyParameters MP ]
+    (value : u32) :
+    RustM (MontyField31 MP) := do
+  (pure (MontyField31.mk
+    (value := (← (to_monty MP value)))
+    (_phantom := Core_models.Marker.PhantomData.mk)))
+
+--  FieldParameters contains constants and methods needed to imply PrimeCharacteristicRing, Field and PrimeField32 for MontyField31.
+class FieldParameters.AssociatedTypes (Self : Type) where
+  [trait_constr_FieldParameters_i0 : PackedMontyParameters.AssociatedTypes Self]
+
+attribute [instance]
+  FieldParameters.AssociatedTypes.trait_constr_FieldParameters_i0
+
+class FieldParameters (Self : Type)
+  [associatedTypes : outParam (FieldParameters.AssociatedTypes (Self : Type))]
   where
-  PrimeSubfield := Mersenne31
+  [trait_constr_FieldParameters_i0 : PackedMontyParameters Self]
+  MONTY_ZERO (Self) :RustM (MontyField31 Self) := do (Impl.new Self (0 : u32))
+  MONTY_ONE (Self) :RustM (MontyField31 Self) := do (Impl.new Self (1 : u32))
+  MONTY_TWO (Self) :RustM (MontyField31 Self) := do (Impl.new Self (2 : u32))
+  MONTY_NEG_ONE (Self) :RustM (MontyField31 Self) := do
+    (Impl.new Self (← ((MontyParameters.PRIME Self) -? (1 : u32))))
+  MONTY_GEN (Self) : (MontyField31 Self)
+  HALF_P_PLUS_1 (Self) :RustM u32 := do
+    ((← ((MontyParameters.PRIME Self) +? (1 : u32))) >>>? (1 : i32))
 
-instance Impl_1 : Mersenne31.Field.PrimeCharacteristicRing Mersenne31 where
-  ZERO := RustM.of_isOk (do (Mersenne31.mk (value := (0 : u32)))) (by rfl)
-  ONE := RustM.of_isOk (do (Mersenne31.mk (value := (1 : u32)))) (by rfl)
-  TWO := RustM.of_isOk (do (Mersenne31.mk (value := (2 : u32)))) (by rfl)
-  NEG_ONE := RustM.of_isOk
-    (do
-    (Mersenne31.mk
-      (value := (← ((Mersenne31.Field.PrimeField32.ORDER_U32 Mersenne31)
-        -? (1 : u32))))))
-    (by rfl)
-  from_prime_subfield := fun (f : Mersenne31) => do (pure f)
-  from_bool := fun (b : Bool) => do
-    (Impl.new_reduced (← (Rust_primitives.Hax.cast_op b)))
+attribute [instance] FieldParameters.trait_constr_FieldParameters_i0
+
+--  Create a new field element from something already in MONTY form.
+--  This is `pub(crate)` for tests and delayed reduction strategies. If you're using it outside of those, you're
+--  likely doing something fishy.
+def Impl.new_monty
+    (MP : Type)
+    [trait_constr_new_monty_associated_type_i0 : MontyParameters.AssociatedTypes
+      MP]
+    [trait_constr_new_monty_i0 : MontyParameters MP ]
+    (value : u32) :
+    RustM (MontyField31 MP) := do
+  (pure (MontyField31.mk
+    (value := value)
+    (_phantom := Core_models.Marker.PhantomData.mk)))
+
+--  Produce a u32 in range [0, P) from a field element corresponding to the true value.
+def Impl.to_u32
+    (MP : Type)
+    [trait_constr_to_u32_associated_type_i0 : MontyParameters.AssociatedTypes
+      MP]
+    [trait_constr_to_u32_i0 : MontyParameters MP ]
+    (elem : (MontyField31 MP)) :
+    RustM u32 := do
+  (from_monty MP (MontyField31.value elem))
 
 --  Convert a `[u32; N]` array to an array of field elements.
 -- 
---  Const version of `input.map(Mersenne31::new)`.
-def Impl.new_array (N : usize) (input : (RustArray u32 N)) :
-    RustM (RustArray Mersenne31 N) := do
-  let output : (RustArray Mersenne31 N) ←
-    (Rust_primitives.Hax.repeat
-      (← (Mersenne31.Field.PrimeCharacteristicRing.ZERO Mersenne31))
-      N);
+--  Const version of `input.map(MontyField31::new)`.
+def Impl.new_array
+    (MP : Type)
+    (N : usize)
+    [trait_constr_new_array_associated_type_i0 : MontyParameters.AssociatedTypes
+      MP]
+    [trait_constr_new_array_i0 : MontyParameters MP ]
+    (input : (RustArray u32 N)) :
+    RustM (RustArray (MontyField31 MP) N) := do
+  let output : (RustArray (MontyField31 MP) N) ←
+    (Rust_primitives.Hax.repeat (← (Impl.new_monty MP (0 : u32))) N);
   let i : usize := (0 : usize);
   let ⟨i, output⟩ ←
     (Rust_primitives.Hax.while_loop
@@ -561,15 +616,58 @@ def Impl.new_array (N : usize) (input : (RustArray u32 N)) :
       (Rust_primitives.Hax.Tuple2.mk i output)
       (fun ⟨i, output⟩ =>
         (do
-        let output : (RustArray Mersenne31 N) ←
+        let output : (RustArray (MontyField31 MP) N) ←
           (Rust_primitives.Hax.Monomorphized_update_at.update_at_usize
             output
             i
-            {(← output[i]_?) with value := (← ((← input[i]_?) %? P))});
+            (← (Impl.new MP (← input[i]_?))));
         let i : usize ← (i +? (1 : usize));
         (pure (Rust_primitives.Hax.Tuple2.mk i output)) :
-        RustM (Rust_primitives.Hax.Tuple2 usize (RustArray Mersenne31 N)))));
+        RustM
+        (Rust_primitives.Hax.Tuple2 usize (RustArray (MontyField31 MP) N)))));
   (pure output)
 
-end Mersenne31.Mersenne31
+--  Convert a constant 2d u32 array into a constant 2d array of field elements.
+--  Constant version of array.map(MontyField31::new_array).
+def Impl.new_2d_array
+    (MP : Type)
+    (N : usize)
+    (M : usize)
+    [trait_constr_new_2d_array_associated_type_i0 :
+      MontyParameters.AssociatedTypes
+      MP]
+    [trait_constr_new_2d_array_i0 : MontyParameters MP ]
+    (input : (RustArray (RustArray u32 N) M)) :
+    RustM (RustArray (RustArray (MontyField31 MP) N) M) := do
+  let output : (RustArray (RustArray (MontyField31 MP) N) M) ←
+    (Rust_primitives.Hax.repeat
+      (← (Rust_primitives.Hax.repeat (← (Impl.new_monty MP (0 : u32))) N))
+      M);
+  let i : usize := (0 : usize);
+  let ⟨i, output⟩ ←
+    (Rust_primitives.Hax.while_loop
+      (fun ⟨i, output⟩ => (do (pure true) : RustM Bool))
+      (fun ⟨i, output⟩ =>
+        (do (Rust_primitives.Hax.Machine_int.lt i M) : RustM Bool))
+      (fun ⟨i, output⟩ =>
+        (do
+        (Rust_primitives.Hax.Int.from_machine (0 : u32)) :
+        RustM Hax_lib.Int.Int))
+      (Rust_primitives.Hax.Tuple2.mk i output)
+      (fun ⟨i, output⟩ =>
+        (do
+        let output : (RustArray (RustArray (MontyField31 MP) N) M) ←
+          (Rust_primitives.Hax.Monomorphized_update_at.update_at_usize
+            output
+            i
+            (← (Impl.new_array MP (N) (← input[i]_?))));
+        let i : usize ← (i +? (1 : usize));
+        (pure (Rust_primitives.Hax.Tuple2.mk i output)) :
+        RustM
+        (Rust_primitives.Hax.Tuple2
+          usize
+          (RustArray (RustArray (MontyField31 MP) N) M)))));
+  (pure output)
+
+end Mersenne31.Monty_31
 
