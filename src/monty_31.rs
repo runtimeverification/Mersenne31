@@ -1,11 +1,49 @@
 //! An abstraction of 31-bit fields which use a MONTY approach for faster multiplication.
 
+use core::ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign, Not};
 use core::marker::PhantomData;
 use crate::field::PrimeCharacteristicRing;
+use crate::unimplemented::{Iterator, Product, Sum};
 
 ////////////////////////////
 // IMPORTED FROM utils.rs //
 ////////////////////////////
+
+// NOTE: Originally form `monty-31/src/utils.rs`
+/// Add two integers modulo `P = MP::PRIME`.
+///
+/// Assumes that `P` is less than `2^31` and `a + b <= 2P` for all array pairs `a, b`.
+/// If the inputs are not in this range, the result may be incorrect.
+/// The result will be in the range `[0, P]` and equal to `(a + b) mod P`.
+/// It will be equal to `P` if and only if `a + b = 2P` so provided `a + b < 2P`
+/// the result is guaranteed to be less than `P`.
+#[inline]
+#[must_use]
+pub(crate) const fn add<MP: MontyParameters>(lhs: u32, rhs: u32) -> u32 {
+    let mut sum = lhs + rhs;
+    let (corr_sum, over) = sum.overflowing_sub(MP::PRIME);
+    if !over {
+        sum = corr_sum;
+    }
+    sum
+}
+
+// NOTE: Originally form `monty-31/src/utils.rs`
+/// Subtract two integers modulo `P = MP::PRIME`.
+///
+/// Assumes that `P` is less than `2^31` and `|a - b| <= P` for all array pairs `a, b`.
+/// If the inputs are not in this range, the result may be incorrect.
+/// The result will be in the range `[0, P]` and equal to `(a - b) mod P`.
+/// It will be equal to `P` if and only if `a - b = P` so provided `a - b < P`
+/// the result is guaranteed to be less than `P`.
+#[inline]
+#[must_use]
+pub(crate) const fn sub<MP: MontyParameters>(lhs: u32, rhs: u32) -> u32 {
+    let (mut diff, over) = lhs.overflowing_sub(rhs);
+    let corr = if over { MP::PRIME } else { 0 };
+    diff = diff.wrapping_add(corr);
+    diff
+}
 
 // NOTE: Originally form `monty-31/src/utils.rs`
 /// Given an element `x` from a 31 bit field `F` compute `x/2`.
@@ -76,7 +114,7 @@ pub(crate) const fn from_monty<MP: MontyParameters>(x: u32) -> u32 {
 /// MontyParameters contains the prime P along with constants needed to convert elements into and out of MONTY form.
 /// The MONTY constant is assumed to be a power of 2.
 pub trait MontyParameters:
-    Copy //+ Default + Eq //+ PartialEq //+ Sync + Send + 'static
+    Copy + Default // + Eq //+ PartialEq //+ Sync + Send + 'static
 {
     // A 31-bit prime.
     const PRIME: u32;
@@ -201,5 +239,83 @@ impl<FP: FieldParameters> PrimeCharacteristicRing for MontyField31<FP> {
     #[inline]
     fn halve(&self) -> Self {
         Self::new_monty(halve_u32::<FP>(self.value))
+    }
+}
+
+impl<FP: MontyParameters> Add for MontyField31<FP> {
+    type Output = Self;
+
+    #[inline]
+    fn add(self, rhs: Self) -> Self {
+        Self::new_monty(add::<FP>(self.value, rhs.value))
+    }
+}
+
+impl<FP: MontyParameters> Sub for MontyField31<FP> {
+    type Output = Self;
+
+    #[inline]
+    fn sub(self, rhs: Self) -> Self {
+        Self::new_monty(sub::<FP>(self.value, rhs.value))
+    }
+}
+
+impl<FP: FieldParameters> Neg for MontyField31<FP> {
+    type Output = Self;
+
+    #[inline]
+    fn neg(self) -> Self::Output {
+        Self::ZERO - self
+    }
+}
+
+impl<FP: MontyParameters> Mul for MontyField31<FP> {
+    type Output = Self;
+
+    #[inline]
+    fn mul(self, rhs: Self) -> Self {
+        let long_prod = self.value as u64 * rhs.value as u64;
+        Self::new_monty(monty_reduce::<FP>(long_prod))
+    }
+}
+
+// AddAssign is implemented via the `impl_add_assign` macro
+// Source: field/src/op_assign_macros.rs
+impl<FP: FieldParameters> AddAssign for MontyField31<FP> {
+    fn add_assign(&mut self, rhs: MontyField31<FP>) {
+        *self = *self + rhs.into();
+    }
+}
+
+// SubAssign is implemented via the `impl_sub_assign` macro
+// Source: field/src/op_assign_macros.rs
+impl<FP: FieldParameters> SubAssign for MontyField31<FP> {
+    fn sub_assign(&mut self, rhs: MontyField31<FP>) {
+        *self = *self - rhs.into();
+    }
+}
+
+// MulAssign is implemented via the `impl_mul_assign` macro
+// Source: field/src/op_assign_macros.rs
+impl<FP: FieldParameters> MulAssign for MontyField31<FP> {
+    fn mul_assign(&mut self, rhs: MontyField31<FP>) {
+        *self = *self * rhs.into();
+    }
+}
+
+/// NOTE: Placeholder dummy impl
+impl<FP: FieldParameters> Product for MontyField31<FP> {
+    // Original:
+    // fn product<I: Iterator<Item = Self>>(iter: I) -> Self {
+    //     iter.reduce(|x, y| x * y).unwrap_or(Self::ONE)
+    // }
+    fn product<I: Iterator<Item = Self>>(iter: I) -> Self {
+        Self::new(0)
+    }
+}
+
+impl<FP: FieldParameters> Sum for MontyField31<FP> {
+    fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
+        Self::new(0)
     }
 }
