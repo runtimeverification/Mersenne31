@@ -19,10 +19,13 @@ abbrev Core_models.Num.Impl_2.overflowing_add (n m : Int32) := overflowing_add.o
 class overflowing_sub (α : Type) where
   os : α → α → RustM (α × Bool)
 
-abbrev Core_models.Num.Impl_8.overflowing_sub {α : Type} [self : HaxPatch.overflowing_sub α] :=
+abbrev core_models.num.Impl_8.overflowing_sub {α : Type} [self : HaxPatch.overflowing_sub α] :=
   @overflowing_sub.os α self
 
-abbrev Core_models.Num.Impl_9.overflowing_sub {α : Type} [self : HaxPatch.overflowing_sub α] :=
+/- abbrev Core_models.Num.Impl_9.overflowing_sub {α : Type} [self : HaxPatch.overflowing_sub α] :=
+  @overflowing_sub.os α self -/
+
+abbrev core_models.num.Impl_9.overflowing_sub {α : Type} [self : HaxPatch.overflowing_sub α] :=
   @overflowing_sub.os α self
 
 @[reducible] instance : overflowing_sub UInt32 where
@@ -49,7 +52,12 @@ abbrev Core_models.Num.Impl_9.wrapping_mul {α : Type} [self : HaxPatch.wrapping
 @[reducible] instance : wrapping_mul UInt64 where
   wm := fun (n m : UInt64) => RustM.ok (n * m)
 
-instance : Cast Bool u32 where
-  cast x := ite x 1 0
+-- Quick fix, should be generalized
+abbrev core_models.ops.bit.Not.not : Bool → RustM Bool := fun b => pure (Not b)
+
+infixl:60 "rust_primitives.hax.machine_int.shl" => ShiftLeft.shiftLeft
+
+/- instance : Cast Bool u32 where
+  cast x := ite x (1 : u32) 0 -/
 
 end HaxPatch
